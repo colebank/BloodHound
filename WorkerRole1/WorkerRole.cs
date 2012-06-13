@@ -1,5 +1,3 @@
-
-
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -11,29 +9,75 @@ using System.Xml;
 using System.Xml.XPath;
 using System.Threading;
 using System.Web;
+using HtmlAgilityPack;
+
 
 using Microsoft.WindowsAzure;
 using Microsoft.WindowsAzure.Diagnostics;
 using Microsoft.WindowsAzure.ServiceRuntime;
 using Microsoft.WindowsAzure.StorageClient;
 
+using AmazonProductAdvtApi;
 
 namespace WorkerRole1
 {
-
+    
     public class WorkerRole : RoleEntryPoint
     {
+        private const string MY_AWS_ACCESS_KEY_ID = "AKIAJIZEV7REJAIWMEVQ";
+        private const string MY_AWS_SECRET_KEY = "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";
+        private const string DESTINATION = "ecs.amazonaws.com";
+        
+        SignedRequestHelper helper;
+
         public override void Run()
         {
+/*            helper = new SignedRequestHelper(MY_AWS_ACCESS_KEY_ID, MY_AWS_SECRET_KEY, DESTINATION);
+            AmazonFileLoader afl= new AmazonFileLoader(helper);
+            afl.Run();
+*/
             // This is a sample worker implementation. Replace with your logic.
             Trace.WriteLine("$projectname$ entry point called", "Information");
 
             //while (true)
             {
-                FetchPage("http://edelweiss.abovethetreeline.com/ProductDetailPage.aspx?sku=0345527356");
+//                XmlDocument d = FetchPage("http://edelweiss.abovethetreeline.com/ProductDetailPage.aspx?sku=0345527356");
+//                XmlDocument d = FetchPage("http://google.com");
+
+
+                string url ="http://edelweiss.abovethetreeline.com/ProductDetailPage.aspx?sku=0345527356";
+
+ 
+                HtmlWeb hw = new HtmlWeb();
+                //string url = @"http://www.microsoft.com";
+
+                HtmlDocument doc = hw.Load(url);
+                doc.Save("/site.xml");
+                //string x = doc.DocumentNode.FirstChild.Name;
+                string xp = "//a[@class=\"gen-jacket-flyout\"]";
+                //HtmlNode tt= 
+                string LargeImageUrl = doc.DocumentNode.SelectSingleNode(xp).GetAttributeValue("href", "");
+                System.Console.WriteLine(LargeImageUrl);
+
+                
+                xp = "//div[@class=\"shipDate attGroupItem\"]";
+                string ShipDate = doc.DocumentNode.SelectSingleNode(xp).InnerText;
+                System.Console.WriteLine(ShipDate);
+
+                xp = "//div[@class=\"sku attGroup \"]";
+                string ISBN = doc.DocumentNode.SelectSingleNode(xp).InnerText;
+                System.Console.WriteLine(ISBN);
+
+
+
+
+
+
+
                 Thread.Sleep(10000);
                 Trace.WriteLine("Working", "Information");
             }
+
         }
 
         public override bool OnStart()
@@ -47,13 +91,33 @@ namespace WorkerRole1
             return base.OnStart();
         }
 
+/*
+        private HtmlWeb CreateWebRequestObject()
+        {
+            HtmlWeb web = new HtmlWeb();
+            web.UseCookies = true;
+            web.PreRequest = new HtmlWeb.PreRequestHandler(PreRequestStuff);
+            web.PostResponse = new HtmlWeb.PostResponseHandler(AfterResponseStuff);
+            web.PreHandleDocument = new HtmlWeb.PreHandleDocumentHandler(PreHandleDocumentStuff);
+            return web;
+        }
+*/
 
-        private static string FetchPage(string url)
+
+        private static XmlDocument FetchPage(string url)
         {
             try
             {
+                /*
+                "http://edelweiss.abovethetreeline.com/getJSONData.aspx?builder=SetIncludeBackList&includeBacklist=true";
+ 
+                http://edelweiss.abovethetreeline.com/Browse.aspx?source=catalog&group=browse&startIndex=0
+                */
 
-                WebRequest request = WebRequest.Create(url);
+
+                HttpWebRequest request=(HttpWebRequest)WebRequest.Create(url);
+                request.UserAgent = " Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)";
+
                 // If required by the server, set the credentials.
                 //request.Credentials = CredentialCache.DefaultCredentials;
                 // Get the response.
@@ -67,30 +131,45 @@ namespace WorkerRole1
                 // Read the content.
                 string responseFromServer = reader.ReadToEnd();
                 // Display the content.
-                Console.WriteLine(responseFromServer);
+                //Console.WriteLine(responseFromServer);
                 // Cleanup the streams and the response.
                 reader.Close();
                 dataStream.Close();
                 response.Close();
 
-                /*
+                StreamWriter fs = new StreamWriter("c:/site.xml");
+                fs.Write(responseFromServer);
+                fs.Close();
 
-                                WebRequest request = HttpWebRequest.Create(url);
-                                WebResponse response = request.GetResponse();
-                                XmlDocument doc = new XmlDocument();
-                                doc.Load(response.GetResponseStream());
+                XmlDocument doc = new XmlDocument();
+                //doc.Load(response.GetResponseStream());
+                doc.LoadXml(responseFromServer);
 
-                                XmlNodeList errorMessageNodes = doc.GetElementsByTagName("Message", NAMESPACE);
-                                if (errorMessageNodes != null && errorMessageNodes.Count > 0)
-                                {
-                                    String message = errorMessageNodes.Item(0).InnerText;
-                                    return "Error: " + message + " (but signature worked)";
-                                }
+                XmlNode titleNode = doc.GetElementsByTagName("title").Item(0);
+                string title = titleNode.InnerText;
+                Console.WriteLine(title);
+                return doc;
 
-                                XmlNode titleNode = doc.GetElementsByTagName("Title", NAMESPACE).Item(0);
-                                string title = titleNode.InnerText;
-                                return title;
-                 */
+
+
+
+/*
+                WebRequest request = HttpWebRequest.Create(url);
+                WebResponse response = request.GetResponse();
+                XmlDocument doc = new XmlDocument();
+                doc.Load(response.GetResponseStream());
+
+                XmlNodeList errorMessageNodes = doc.GetElementsByTagName("Message", NAMESPACE);
+                if (errorMessageNodes != null && errorMessageNodes.Count > 0)
+                {
+                    String message = errorMessageNodes.Item(0).InnerText;
+                    return "Error: " + message + " (but signature worked)";
+                }
+
+                XmlNode titleNode = doc.GetElementsByTagName("Title", NAMESPACE).Item(0);
+                string title = titleNode.InnerText;
+                return title;
+ */
             }
             catch (Exception e)
             {

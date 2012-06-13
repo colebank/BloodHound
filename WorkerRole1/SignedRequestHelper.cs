@@ -27,7 +27,7 @@ using System.Security.Cryptography;
 
 namespace AmazonProductAdvtApi
 {
-    class SignedRequestHelper
+    public class SignedRequestHelper
     {
         private string endPoint;
         private string akid;
