@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ServiceConfiguration serviceName="BloodHound" xmlns="http://schemas.microsoft.com/ServiceHosting/2008/10/ServiceConfiguration" osFamily="1" osVersion="*">
+  <Role name="WorkerRole1">
+    <Instances count="1" />
+    <ConfigurationSettings>
+      <Setting name="Microsoft.WindowsAzure.Plugins.Diagnostics.ConnectionString" value="UseDevelopmentStorage=true" />
+      <Setting name="DiagnosticsConnectionString" value="UseDevelopmentStorage=true" />
+      <Setting name="AzureDataConnectionString" value="DefaultEndpointsProtocol=https;AccountName=mongrel;AccountKey=q7uTcOakeZrRgnqfwZuVICkhHt6eEfI1dGnnfFlBjtpdzv5zj9BTJ4u9dURxKAydhqHnyM7jFk0BnhU0auZseA==" />
+    </ConfigurationSettings>
+  </Role>
+</ServiceConfiguration>
