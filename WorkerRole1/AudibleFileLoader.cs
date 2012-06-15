@@ -9,7 +9,7 @@ using System.Xml;
 using System.Xml.XPath;
 using System.Threading;
 using System.Web;
-
+using HtmlAgilityPack;
 
 
 using Microsoft.WindowsAzure;
@@ -20,242 +20,166 @@ using Microsoft.WindowsAzure.StorageClient;
 using AmazonProductAdvtApi;
 
 
-namespace WorkerRole1
-{
-
-    public class AmazonFileLoader
-    {
-        private SignedRequestHelper m_helper;
-
-        public AmazonFileLoader(SignedRequestHelper  h) 
+        public class AudibleRecord : TableServiceEntity
         {
-            m_helper=h;
-        }
-
-        //       private const string ITEM_ID = "B000MRA3T4";
-        private const string ITEM_ID = "9780007391592";
-       private const string NAMESPACE = "http://webservices.amazon.com/AWSECommerceService/2009-03-31";
-       private const string MY_AWS_ASSOCIATE_TAG = "bookm02a-20";
-
-       public void Run()
-       {
-                String requestUrl;
-                String title;
-
-                //title = FetchTitle("http://www.google.com");
-
-                /*
-                 * Here is an ItemLookup example where the request is stored as a dictionary.
-                 */
-                IDictionary<string, string> r1 = new Dictionary<string, String>();
-                //r1["Service"] = "AWSECommerceService";
-                //r1["Version"] = "2011-08-01";
-  //               r1["ResponseGroup"] = "RelatedItems";
-                //                r1["ResponseGroup"] = "Small";
-//               r1["IdType"] = "ASIN";
-
-                /* Random params for testing
-                r1["AnUrl"] = "http://www.amazon.com/books";
-                r1["AnEmailAddress"] = "foobar@nowhere.com";
-                r1["AUnicodeString"] = "αβγδεٵٶٷٸٹٺチャーハン叉焼";
-                r1["Latin1Chars"] = "ĀāĂăĄąĆćĈĉĊċČčĎďĐđĒēĔĕĖėĘęĚěĜĝĞğĠġĢģĤĥĦħĨĩĪīĬĭĮįİıĲĳ";
-                 */
-
-//                r1["RelationshipType"] = "AuthorityTitle";
-                r1["Operation"] = "ItemLookup";
-                r1["ItemId"] = ITEM_ID;
-                r1["ResponseGroup"] = "Large,EditorialReview,AlternateVersions";
-                r1["AssociateTag"] = MY_AWS_ASSOCIATE_TAG;
-//                r1["IdType"] = "ASIN";
-                r1["IdType"] = "ISBN";
-                r1["MerchantId"] = "Amazon";
-                r1["Availability"] = "Available";//                r1["SearchIndex"] = "Books";
-                r1["SearchIndex"] = "Books";
-                //
-
-/*
-//                r1["RelationshipType"] = "AuthorityTitle";
-                r1["Operation"] = "ItemSearch";
-//                r1["ItemId"] = ITEM_ID;
-                r1["ResponseGroup"] = "EditorialReview,AlternateVersions";
-                r1["AssociateTag"] = MY_AWS_ASSOCIATE_TAG;
-//                r1["IdType"] = "ISBN";
-                r1["SearchIndex"] = "Books";
-                //r1["Title"] = "The Memoirs of Cleopatra";
-                //r1["Aurhor"] = "Margaret George"; 
-                r1["Keywords"] = "BK_BKOT_000832";
-//                r1["Actor"] = "Donada Peters";
-                //r1["MerchantId"] = "Amazon";
-                //r1["Availability"] = "Available";
-                //r1["Publisher"] = "Books on Tape";
-           */
-                requestUrl = m_helper.Sign(r1);
-                title = FetchTitle(requestUrl);
-
-                System.Console.WriteLine("Method 1: ItemLookup Dictionary form.");
-                System.Console.WriteLine("Title is \"" + title + "\"");
-                System.Console.WriteLine();
-
-                /*
-                 * Here is a CartCreate example where the request is stored as a dictionary.
-            
-                IDictionary<string, string> r2 = new Dictionary<string, String>();
-                r2["Service"] = "AWSECommerceService";
-                r2["Version"] = "2011-08-01";
-                r2["Operation"] = "CartCreate";
-                r2["Item.1.OfferListingId"] = "Ho46Hryi78b4j6Qa4HdSDD0Jhan4MILFeRSa9mK+6ZTpeCBiw0mqMjOG7ZsrzvjqUdVqvwVp237ZWaoLqzY11w==";
-                r2["Item.1.Quantity"] = "1";
-                r2["AssociateTag"] = MY_AWS_ASSOCIATE_TAG;
-                r2["IdType"] = "ISBN";
-                r2["SearchIndex"] = "Books";
-
-                requestUrl = m_helper.Sign(r2);
-                title = FetchTitle(requestUrl);
-
-                System.Console.WriteLine("Method 1: CartCreate Dictionary form.");
-                System.Console.WriteLine("Cart Item Title is \"" + title + "\"");
-                System.Console.WriteLine();  
-           
-       */         
-            //while (true)
+            public AudibleRecord(string lastName, string firstName)
             {
-                // Do Some Work
-
-
-                Thread.Sleep(100);
+                this.PartitionKey = lastName;
+                this.RowKey = firstName;
             }
+
+            public AudibleRecord() { }
+
+            public string last_updated { get; set; }
+            public string name { get; set; }
+            public string category { get; set; }
+            public string keywords { get; set; }
+            public string short_description { get; set; }
+            public string long_description { get; set; }
+            public string sku { get; set; }
+            public string asin { get; set; }
+            public string isbn { get; set; }
+            public string our_price { get; set; }
+            public string retail_price { get; set; }
+            public string buy_url { get; set; }
+            public string thumb_nail_url { get; set; }
+            public string large_image_url { get; set; }
+            public string average_customer_rating { get; set; }
+            public string author { get; set; }
+            public string publisher { get; set; }
+            public string audio_length { get; set; }
+            public string sample_url { get; set; }
+            public string release_date { get; set; }
+            public string narrator { get; set; }
+            public string faithfulness { get; set; }
+            public string number_of_credits { get; set; }
+
         }
 
 
+//namespace WorkerRole1
+//{
 
-       private static string FetchTitle(string url)
-       {
-           try
-           {
-               WebRequest request = HttpWebRequest.Create(url);
-               WebResponse response = request.GetResponse();
-
-               Stream dataStream = response.GetResponseStream();
-               // Open the stream using a StreamReader for easy access.
-               StreamReader reader = new StreamReader(dataStream);
-               // Read the content.
-               string responseFromServer = reader.ReadToEnd();
-               // Display the content.
-               Console.WriteLine(responseFromServer);
-               // Cleanup the streams and the response.
-               reader.Close();
-               dataStream.Close();
-               response.Close();
-
-               StreamWriter fs = new StreamWriter("c:/t.xml");
-               fs.Write(responseFromServer);
-               fs.Close();
-
-
-
-               XmlDocument doc = new XmlDocument();
-               doc.Load(response.GetResponseStream());
-
-               XmlNodeList errorMessageNodes = doc.GetElementsByTagName("Message", NAMESPACE);
-               if (errorMessageNodes != null && errorMessageNodes.Count > 0)
-               {
-                   String message = errorMessageNodes.Item(0).InnerText;
-                   return "Error: " + message + " (but signature worked)";
-               }
-
-               XmlNode titleNode = doc.GetElementsByTagName("Title", NAMESPACE).Item(0);
-               string title = titleNode.InnerText;
-               return title;
-           }
-           catch (Exception e)
-           {
-               System.Console.WriteLine("Caught Exception: " + e.Message);
-               System.Console.WriteLine("Stack Trace: " + e.StackTrace);
-           }
-
-           return null;
-       }
-
-
-
-
-
-
-    }
-
-}
-
-
-
-
-/*
-
-
-public class WorkerRole : ThreadedRoleEntryPoint
-{
-    public override void Run()
+    public class AudibleFileLoader
     {
-        // This is a sample worker implementation. Replace with your logic.
-        Trace.WriteLine("Worker Role entry point called", "Information");
+        public AudibleFileLoader(TableHelper tc) { m_TableHelper = tc; }
+        TableHelper m_TableHelper;
 
-        base.Run();
-    }
-
-    public override bool OnStart()
-    {
-        List<WorkerEntryPoint> workers = new List<WorkerEntryPoint>();
-
-        workers.Add(new ImageSizer());
-        workers.Add(new ImageSizer());
-        workers.Add(new ImageSizer());
-        workers.Add(new HouseCleaner());
-        workers.Add(new TurkHandler());
-        workers.Add(new Crawler());
-        workers.Add(new Crawler());
-        workers.Add(new Crawler());
-        workers.Add(new Gardener());
-        workers.Add(new Striker());
-
-        return base.OnStart(workers.ToArray());
-    }
-}
-
-
-
-
-internal class Striker : WorkerEntryPoint
-{
-    public override void Run()
-    {
-        while (true)
+        public int LoadFromFile(string fn)
         {
-            // Do Some Work
+            StreamReader sr = new StreamReader(fn);
+            string Header = sr.ReadLine();
+            string Expected = "last_updated\tname\tcategory\tkeywords\tshort_description\tlong_description\tsku\tasin\tisbn\tour_price\tretail_price\tbuy_url\tthumb_nail_url\tlarge_image_url\taverage_customer_rating\tauthor\tpublisher\taudio_length\tsample_url\trelease_date\tnarrator\tfaithfulness\tnumber_of_credits";
+            if (Header != Expected)
+                return -1;
 
-            Thread.Sleep(100);
+            HtmlWeb hw = new HtmlWeb();
+            hw.UserAgent = " Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)";
+            m_TableHelper.CreateTable("ISBN");
+
+            for(int i=0;i<100;i++)
+            {
+                string Data = sr.ReadLine();
+                string [] records = Data.Split(new Char [] {'\t' });
+                AudibleRecord ar=new AudibleRecord();
+
+     /*         foreach (string s in records) 
+                {
+
+                if (s.Trim() != "")
+                    Console.WriteLine(s);
+                }
+    */
+         
+                ar.last_updated=records[0];
+                ar.name=records[1];
+                ar.category=records[2];
+                ar.keywords=records[3];
+                ar.short_description=records[4];
+                ar.long_description=records[5];
+                ar.sku=records[6];
+                ar.asin=records[7];
+                ar.isbn=records[8];
+                ar.our_price=records[9];
+                ar.retail_price=records[10];
+                ar.buy_url=records[11];
+                ar.thumb_nail_url=records[12];
+                ar.large_image_url=records[13];
+                ar.average_customer_rating=records[14];
+                ar.author=records[15];
+                ar.publisher=records[16];
+                ar.audio_length=records[17];
+                ar.sample_url=records[18];
+                ar.release_date=records[19];
+                ar.narrator=records[20];
+                ar.faithfulness=records[21];
+                ar.number_of_credits=records[22];
+
+
+                if (ar.sku.Substring(0, 2)!= "BK")
+                    continue;
+
+                string url = "http://www.amazon.com/s/field-keywords=" + ar.sku;
+
+                HtmlDocument doc = hw.Load(url);
+
+
+                string xp = "//h1[@id=\"noResultsTitle\"]";
+                HtmlNode Node = doc.DocumentNode.SelectSingleNode(xp);//.InnerText;
+
+                if (Node != null)
+                    continue;
+
+                xp = "//div[@id=\"result_0\"]";
+
+                HtmlNode ProdNode = doc.DocumentNode.SelectSingleNode(xp);
+                if (ProdNode == null)
+                    continue;
+                string Asin = ProdNode.GetAttributeValue("name", "");   
+
+
+                //xp = "//a[@class=\"title\"]";
+                xp = ".//a";
+                //doc.Save("/site.xml");
+
+                Node = ProdNode.SelectSingleNode(xp);
+                if (Node == null)
+                    continue;
+                string MainLink = Node.GetAttributeValue("href", "");
+                string[] LinkList = MainLink.Split(new Char[] { '/' });
+                string FamillyName = LinkList[3];
+
+                Console.WriteLine(Asin);
+
+                ar.PartitionKey = FamillyName;
+                ar.RowKey = Asin;
+            }
+
+            sr.Close();
+/*
+            StreamWriter fs = new StreamWriter("c:/site.xml");
+            fs.Write(responseFromServer);
+
+*/
+
+
+            return 0;
         }
-    }
+
+
+
+
+
+																						
+
+
+
+
+
+
+
 }
 
+//}
 
 
-
-
-
-   CookieContainer cookieJar = new CookieContainer();
-   private void FireRequest()
-   {
-            var request = HttpWebRequest.Create(new Uri("http://www.google.se")) as HttpWebRequest;
- 
-            request.Method = "GET";
-            request.CookieContainer = cookieJar;
- 
-            request.BeginGetResponse(ar =>
-            {
-                HttpWebRequest req2 = (HttpWebRequest)ar.AsyncState;
-                var response = (HttpWebResponse)req2.EndGetResponse(ar);
-                int numVisibleCookies = response.Cookies.Count;
- 
-            }, request);
-        }
- Inspecting th
-*/

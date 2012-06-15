@@ -1,3 +1,5 @@
+
+
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -11,7 +13,6 @@ using System.Threading;
 using System.Web;
 using HtmlAgilityPack;
 
-
 using Microsoft.WindowsAzure;
 using Microsoft.WindowsAzure.Diagnostics;
 using Microsoft.WindowsAzure.ServiceRuntime;
@@ -19,23 +20,23 @@ using Microsoft.WindowsAzure.StorageClient;
 
 using AmazonProductAdvtApi;
 
-namespace WorkerRole1
-{
-    
+//namespace WorkerRole1
+//{
+
     public class WorkerRole : RoleEntryPoint
     {
-        private const string MY_AWS_ACCESS_KEY_ID = "AKIAJIZEV7REJAIWMEVQ";
-        private const string MY_AWS_SECRET_KEY = "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";
-        private const string DESTINATION = "ecs.amazonaws.com";
-        
-        SignedRequestHelper helper;
+        //CloudStorageAccount m_StorageAccount;
+        //CloudTableClient m_TableClient;
+        TableHelper m_TableHelper;
 
         public override void Run()
         {
-/*            helper = new SignedRequestHelper(MY_AWS_ACCESS_KEY_ID, MY_AWS_SECRET_KEY, DESTINATION);
-            AmazonFileLoader afl= new AmazonFileLoader(helper);
-            afl.Run();
-*/
+
+            var Audible = new AudibleFileLoader(m_TableHelper);
+            Audible.LoadFromFile("C:/Save/all_products (1).txt");
+
+            //afl.Run();
+
             // This is a sample worker implementation. Replace with your logic.
             Trace.WriteLine("$projectname$ entry point called", "Information");
 
@@ -44,10 +45,9 @@ namespace WorkerRole1
 //                XmlDocument d = FetchPage("http://edelweiss.abovethetreeline.com/ProductDetailPage.aspx?sku=0345527356");
 //                XmlDocument d = FetchPage("http://google.com");
 
-
+/*
                 string url ="http://edelweiss.abovethetreeline.com/ProductDetailPage.aspx?sku=0345527356";
 
- 
                 HtmlWeb hw = new HtmlWeb();
                 //string url = @"http://www.microsoft.com";
 
@@ -57,22 +57,18 @@ namespace WorkerRole1
                 string xp = "//a[@class=\"gen-jacket-flyout\"]";
                 //HtmlNode tt= 
                 string LargeImageUrl = doc.DocumentNode.SelectSingleNode(xp).GetAttributeValue("href", "");
-                System.Console.WriteLine(LargeImageUrl);
+                Console.WriteLine(LargeImageUrl);
 
                 
                 xp = "//div[@class=\"shipDate attGroupItem\"]";
                 string ShipDate = doc.DocumentNode.SelectSingleNode(xp).InnerText;
-                System.Console.WriteLine(ShipDate);
+                Console.WriteLine(ShipDate);
 
                 xp = "//div[@class=\"sku attGroup \"]";
                 string ISBN = doc.DocumentNode.SelectSingleNode(xp).InnerText;
-                System.Console.WriteLine(ISBN);
+                Console.WriteLine(ISBN);
 
-
-
-
-
-
+*/
 
                 Thread.Sleep(10000);
                 Trace.WriteLine("Working", "Information");
@@ -80,8 +76,28 @@ namespace WorkerRole1
 
         }
 
+        private const string MY_AWS_ACCESS_KEY_ID = "AKIAJIZEV7REJAIWMEVQ";
+        private const string MY_AWS_SECRET_KEY = "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";
+        private const string DESTINATION = "ecs.amazonaws.com";
+
         public override bool OnStart()
         {
+
+            string cs = RoleEnvironment.GetConfigurationSettingValue("AzureDataConnectionString");
+            m_TableHelper = new TableHelper(cs);
+
+            //m_StorageAccount = CloudStorageAccount.FromConfigurationSetting("AzureDataConnectionString");
+            //m_TableClient = m_StorageAccount.CreateCloudTableClient();
+            //m_TableClient.RetryPolicy = RetryPolicies.Retry(4, TimeSpan.Zero);
+
+
+            //var context = new CustomerDataContext(cloudStorageAccount.TableEndpoint.AbsoluteUri, cloudStorageAccount.Credentials);
+
+            SignedRequestHelper helper = new SignedRequestHelper(MY_AWS_ACCESS_KEY_ID, MY_AWS_SECRET_KEY, DESTINATION);
+            AmazonFileLoader.Init(helper);
+
+
+
             // Set the maximum number of concurrent connections 
             ServicePointManager.DefaultConnectionLimit = 12;
 
@@ -173,15 +189,16 @@ namespace WorkerRole1
             }
             catch (Exception e)
             {
-                System.Console.WriteLine("Caught Exception: " + e.Message);
-                System.Console.WriteLine("Stack Trace: " + e.StackTrace);
+                //System.
+                Console.WriteLine("Caught Exception: " + e.Message);
+                Console.WriteLine("Stack Trace: " + e.StackTrace);
             }
 
             return null;
         }
     }
 
-}
+//}
 
 /*
 
