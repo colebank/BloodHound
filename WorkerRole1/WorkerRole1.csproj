@@ -22,7 +22,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <PlatformTarget>x64</PlatformTarget>
+    <PlatformTarget>AnyCPU</PlatformTarget>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -33,16 +33,32 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="DotNetOpenAuth">
+      <HintPath>..\..\AzureSamples\DotNetOpenAuth-4.0.1.12097\Bin\DotNetOpenAuth.dll</HintPath>
+    </Reference>
+    <Reference Include="Google.Apis">
+      <HintPath>..\..\AzureSamples\Google\Samples\Lib\Google.Apis.dll</HintPath>
+    </Reference>
+    <Reference Include="Google.Apis.Authentication.OAuth2">
+      <HintPath>..\..\AzureSamples\Google\Samples\Lib\Google.Apis.Authentication.OAuth2.dll</HintPath>
+    </Reference>
+    <Reference Include="Google.Apis.Books.v1">
+      <HintPath>..\..\AzureSamples\Google\Services\BooksService\Google.Apis.Books.v1.dll</HintPath>
+    </Reference>
     <Reference Include="HtmlAgilityPack">
       <HintPath>..\..\AzureSamples\HtmlAgilityPack\Bin\HtmlAgilityPack.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.WindowsAzure.Diagnostics, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" />
     <Reference Include="Microsoft.WindowsAzure.ServiceRuntime, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" />
     <Reference Include="Microsoft.WindowsAzure.StorageClient, Version=1.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" />
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\..\AzureSamples\JSON.net\Bin\Net40\Newtonsoft.Json.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.configuration" />
     <Reference Include="System.Core" />
     <Reference Include="System.Data.Services.Client" />
+    <Reference Include="System.ServiceModel.Web" />
     <Reference Include="System.Web" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -55,6 +71,20 @@
     <Compile Include="AudibleFileLoader.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="BlobHelper.cs" />
+    <Compile Include="Asciify.cs" />
+    <Compile Include="BTLoader.cs" />
+    <Compile Include="Apple.cs" />
+    <Compile Include="CJ.cs" />
+    <None Include="CodeFile1.cs" />
+    <None Include="CodeFile2.cs" />
+    <Compile Include="Tables.cs" />
+    <Compile Include="Facebook.cs" />
+    <Compile Include="Google.cs" />
+    <Compile Include="ThreadedRoleEntryPoint.cs" />
+    <Compile Include="Utils.cs" />
+    <Compile Include="Goodreads.cs" />
+    <Compile Include="QueueHelper.cs" />
     <Compile Include="TableHelper.cs" />
     <Compile Include="Edelweiss.cs" />
     <Compile Include="WorkerRole.cs">

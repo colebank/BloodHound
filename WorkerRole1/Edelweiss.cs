@@ -169,8 +169,8 @@ using AmazonProductAdvtApi;
            }
            catch (Exception e)
            {
-               System.Console.WriteLine("Caught Exception: " + e.Message);
-               System.Console.WriteLine("Stack Trace: " + e.StackTrace);
+               Console.WriteLine("Caught Exception: " + e.Message);
+               Console.WriteLine("Stack Trace: " + e.StackTrace);
            }
 
            return null;

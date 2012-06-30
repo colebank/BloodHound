@@ -11,6 +11,9 @@ using System.Xml;
 using System.Xml.XPath;
 using System.Threading;
 using System.Web;
+using System.Globalization;
+
+
 using HtmlAgilityPack;
 
 using Microsoft.WindowsAzure;
@@ -19,23 +22,65 @@ using Microsoft.WindowsAzure.ServiceRuntime;
 using Microsoft.WindowsAzure.StorageClient;
 
 using AmazonProductAdvtApi;
+using ThreadedRole;
 
-//namespace WorkerRole1
-//{
 
-    public class WorkerRole : RoleEntryPoint
+    public class Helpers
     {
+        public TableHelper m_Table;
+        public string m_ConnectString;
+        public BlobHelper m_Blob;
+        public QueueHelper m_Queue;
+        public SignedRequestHelper m_AmazonSigned;
+
+        public bool AddNewIsbn(string Isbn13)
+        {
+            return true;
+        }
+    }
+
+namespace Bloodhound
+{
+
+    public class WorkerRole : RoleEntryPoint  //ThreadedRoleEntryPoint
+    {
+
         //CloudStorageAccount m_StorageAccount;
         //CloudTableClient m_TableClient;
-        TableHelper m_TableHelper;
+        Helpers m_Helpers;
 
+        //ISO-8859-1 == (Western European (ISO) 28591).
+        
         public override void Run()
         {
+            Int32 decValue = 182;
+            string hexValue = decValue.ToString("X");
+            int decAgain = int.Parse(hexValue, NumberStyles.HexNumber);
 
-            var Audible = new AudibleFileLoader(m_TableHelper);
-            Audible.LoadFromFile("C:/Save/all_products (1).txt");
+            ASCIIEncoding ascii = new ASCIIEncoding();
+            Byte[] encodedBytes = ascii.GetBytes("Márquez");
+            String decodedString = ascii.GetString(encodedBytes);
+            decodedString = "Márquez".Asciify();
 
+//          var Audible = new AudibleFileLoader(m_TableHelper, m_BlobHelper);
+//          Audible.LoadFromFile("C:/Save/audible_all_products.txt");
+
+            //var Goog = new GoogleLoader(m_Helpers);
+            //Goog.Run();
             //afl.Run();
+
+            try
+            {
+                var BT = new BTFileLoader(m_Helpers);
+                BT.LoadFromFile("C:/puballey/audio-PA_AllTitlesResultTotals_2012-06-16_19-40-07.txt");
+            }
+            catch (Exception e)
+            {
+                //System.
+                Debugger.WriteThree("Caught Exception: " + e.Message);
+                Debugger.WriteThree("Stack Trace: " + e.StackTrace);
+            }
+
 
             // This is a sample worker implementation. Replace with your logic.
             Trace.WriteLine("$projectname$ entry point called", "Information");
@@ -67,13 +112,13 @@ using AmazonProductAdvtApi;
                 xp = "//div[@class=\"sku attGroup \"]";
                 string ISBN = doc.DocumentNode.SelectSingleNode(xp).InnerText;
                 Console.WriteLine(ISBN);
-
 */
+                
 
                 Thread.Sleep(10000);
                 Trace.WriteLine("Working", "Information");
             }
-
+            base.Run();
         }
 
         private const string MY_AWS_ACCESS_KEY_ID = "AKIAJIZEV7REJAIWMEVQ";
@@ -82,9 +127,31 @@ using AmazonProductAdvtApi;
 
         public override bool OnStart()
         {
+        //List<WorkerEntryPoint> workers = new List<WorkerEntryPoint>();
+           // workers.Add(new Striker());
+            m_Helpers = new Helpers();
 
-            string cs = RoleEnvironment.GetConfigurationSettingValue("AzureDataConnectionString");
-            m_TableHelper = new TableHelper(cs);
+            m_Helpers.m_ConnectString = RoleEnvironment.GetConfigurationSettingValue("AzureDataConnectionString");
+            m_Helpers.m_Table = new TableHelper(m_Helpers.m_ConnectString);
+            m_Helpers.m_Blob = new BlobHelper(m_Helpers.m_ConnectString);
+            m_Helpers.m_Queue = new QueueHelper(m_Helpers.m_ConnectString);
+            Debugger.Init(m_Helpers);
+
+
+            m_Helpers.m_Queue.CreateQueue("goodreads-workid");
+
+
+            m_Helpers.m_Table.CreateTable("ISBN");
+            m_Helpers.m_Table.CreateTable("WorkId");
+            m_Helpers.m_Table.CreateTable("Authors");
+            m_Helpers.m_Table.CreateTable("Prices");
+            m_Helpers.m_Table.CreateTable("Ratings");
+            m_Helpers.m_Table.CreateTable("Popularity");
+            m_Helpers.m_Table.CreateTable("Keywords");
+            m_Helpers.m_Table.CreateTable("Bisac");
+
+            m_Helpers.m_Table.CreateTable("Settings");
+            
 
             //m_StorageAccount = CloudStorageAccount.FromConfigurationSetting("AzureDataConnectionString");
             //m_TableClient = m_StorageAccount.CreateCloudTableClient();
@@ -93,8 +160,8 @@ using AmazonProductAdvtApi;
 
             //var context = new CustomerDataContext(cloudStorageAccount.TableEndpoint.AbsoluteUri, cloudStorageAccount.Credentials);
 
-            SignedRequestHelper helper = new SignedRequestHelper(MY_AWS_ACCESS_KEY_ID, MY_AWS_SECRET_KEY, DESTINATION);
-            AmazonFileLoader.Init(helper);
+            m_Helpers.m_AmazonSigned = new SignedRequestHelper(MY_AWS_ACCESS_KEY_ID, MY_AWS_SECRET_KEY, DESTINATION);
+            AmazonFileLoader.Init(m_Helpers.m_AmazonSigned);
 
 
 
@@ -105,7 +172,26 @@ using AmazonProductAdvtApi;
             // see the MSDN topic at http://go.microsoft.com/fwlink/?LinkId=166357.
 
             return base.OnStart();
+            //return base.OnStart(workers.ToArray());
         }
+
+
+
+internal class Striker : WorkerEntryPoint
+{
+    public override void Run()
+    {
+        while (true)
+        {
+            // Do Some Work
+
+            Thread.Sleep(100);
+        }
+    }
+}
+
+
+
 
 /*
         private HtmlWeb CreateWebRequestObject()
@@ -166,9 +252,6 @@ using AmazonProductAdvtApi;
                 Console.WriteLine(title);
                 return doc;
 
-
-
-
 /*
                 WebRequest request = HttpWebRequest.Create(url);
                 WebResponse response = request.GetResponse();
@@ -190,15 +273,16 @@ using AmazonProductAdvtApi;
             catch (Exception e)
             {
                 //System.
-                Console.WriteLine("Caught Exception: " + e.Message);
-                Console.WriteLine("Stack Trace: " + e.StackTrace);
+                Debugger.WriteThree("Caught Exception: " + e.Message);
+                Debugger.WriteThree("Stack Trace: " + e.StackTrace);
             }
 
             return null;
         }
     }
 
-//}
+}
+
 
 /*
 
@@ -235,18 +319,6 @@ public class WorkerRole : ThreadedRoleEntryPoint
 
 
 
-internal class Striker : WorkerEntryPoint
-{
-    public override void Run()
-    {
-        while (true)
-        {
-            // Do Some Work
-
-            Thread.Sleep(100);
-        }
-    }
-}
 
 
 
@@ -271,3 +343,20 @@ internal class Striker : WorkerEntryPoint
         }
  Inspecting th
 */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

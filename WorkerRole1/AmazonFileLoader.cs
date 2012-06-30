@@ -60,7 +60,7 @@ using AmazonProductAdvtApi;
 //                r1["RelationshipType"] = "AuthorityTitle";
                 r1["Operation"] = "ItemLookup";
                 r1["ItemId"] = ITEM_ID;
-                r1["ResponseGroup"] = "Large,EditorialReview,AlternateVersions";
+                r1["ResponseGroup"] = "Large,EditorialReview,AlternateVersions";//Offers and OfferFull
                 r1["AssociateTag"] = MY_AWS_ASSOCIATE_TAG;
 //                r1["IdType"] = "ASIN";
                 r1["IdType"] = "ISBN";
@@ -151,6 +151,7 @@ using AmazonProductAdvtApi;
 
                XmlDocument doc = new XmlDocument();
                doc.Load(response.GetResponseStream());
+               //var element = coreXml.XPathSelectElement("configuration/system.serviceModel/client/endpoint[@name='SomeService']");
 
                XmlNodeList errorMessageNodes = doc.GetElementsByTagName("Message", NAMESPACE);
                if (errorMessageNodes != null && errorMessageNodes.Count > 0)

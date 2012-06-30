@@ -9,7 +9,7 @@
   **********************************************************************************************
 -->
 <ServiceDefinition name="BloodHound" xmlns="http://schemas.microsoft.com/ServiceHosting/2008/10/ServiceDefinition">
-  <WorkerRole name="WorkerRole1" vmsize="Small">
+  <WorkerRole name="WorkerRole1" vmsize="ExtraSmall">
     <Imports>
       <Import moduleName="Diagnostics" />
     </Imports>

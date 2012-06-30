@@ -62,8 +62,42 @@ using AmazonProductAdvtApi;
 
     public class AudibleFileLoader
     {
-        public AudibleFileLoader(TableHelper tc) { m_TableHelper = tc; }
+
         TableHelper m_TableHelper;
+        BlobHelper m_LogBlob;
+
+        public AudibleFileLoader(TableHelper tc,BlobHelper bh) 
+        { 
+            m_TableHelper = tc;
+            m_LogBlob = bh;
+            m_TableHelper.CreateTable("ISBN");
+
+            m_LogBlob.CreateContainer("log");
+            //m_LogBlob.SetContainerACL("log", "private");
+            CloudBlobContainer container = m_LogBlob.BlobClient.GetContainerReference("log");
+/*
+            CloudBlobContainer blobContainer = blobClient.GetContainerReference("azurecontainer");
+            CloudBlob blob = Container.GetBlobReference(blobname + ".res");
+            BlobStream bs = blob.OpenWrite();
+            TextWriter tw = new StreamWriter(bs);
+            string append = resultsLine + ", ";
+            tw.WriteLine(append);
+*/
+
+
+            CloudBlob blob = container.GetBlobReference("AudibleLoader.Log");
+            BlobStream bs = blob.OpenWrite();
+            TextWriter tw = new StreamWriter(bs);
+            tw.WriteLine("test");
+            tw.Flush();
+            //content = new UTF8Encoding().GetString(data);
+            bs.Close();
+            //BlobStream OpenWrite ()
+
+        }
+
+
+
 
         public int LoadFromFile(string fn)
         {
@@ -74,8 +108,8 @@ using AmazonProductAdvtApi;
                 return -1;
 
             HtmlWeb hw = new HtmlWeb();
-            hw.UserAgent = " Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)";
-            m_TableHelper.CreateTable("ISBN");
+//            hw.UserAgent = " Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)";
+            hw.UserAgent = "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.56 Safari/536.5";
 
             for(int i=0;i<100;i++)
             {
@@ -119,7 +153,10 @@ using AmazonProductAdvtApi;
                 if (ar.sku.Substring(0, 2)!= "BK")
                     continue;
 
-                string url = "http://www.amazon.com/s/field-keywords=" + ar.sku;
+                string sss = ar.ToString();
+
+
+                string url = "http://www.amazon.com/s/url=search-alias%3Dstripbooks&field-keywords=" + ar.sku;
 
                 HtmlDocument doc = hw.Load(url);
 
@@ -135,19 +172,40 @@ using AmazonProductAdvtApi;
                 HtmlNode ProdNode = doc.DocumentNode.SelectSingleNode(xp);
                 if (ProdNode == null)
                     continue;
-                string Asin = ProdNode.GetAttributeValue("name", "");   
-
+                string Asin = ProdNode.GetAttributeValue("name", "");
 
                 //xp = "//a[@class=\"title\"]";
-                xp = ".//a";
-                //doc.Save("/site.xml");
+                xp = ".//a";    //the . means from current node, otherwise searches entire tree
 
                 Node = ProdNode.SelectSingleNode(xp);
                 if (Node == null)
                     continue;
-                string MainLink = Node.GetAttributeValue("href", "");
-                string[] LinkList = MainLink.Split(new Char[] { '/' });
-                string FamillyName = LinkList[3];
+                
+                string FamillyName = "";
+                string[] LinkList;
+                string MainLink;
+                
+                MainLink = Node.GetAttributeValue("href", "");
+                LinkList = MainLink.Split(new Char[] { '/' });
+                string fam = LinkList[3];
+               //myparent/mychild[text() = 'foo']
+
+                xp = "//div[@class=\"otherEditions\"]/a";
+                Node = doc.DocumentNode.SelectSingleNode(xp);
+                //doc.Save("/site.xml");
+
+                if (Node != null)
+                {
+                    MainLink = Node.GetAttributeValue("href", "");
+                    string t = Node.InnerText;
+                    LinkList = MainLink.Split(new Char[] { '/' });
+                    FamillyName = LinkList[3];
+                    if (FamillyName == "gp")
+                        FamillyName = "";
+                }
+
+                if (FamillyName == "")
+                    FamillyName = fam;
 
                 Console.WriteLine(Asin);
 
